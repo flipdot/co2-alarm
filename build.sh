@@ -3,4 +3,4 @@
 export GOPATH=""
 export GOARCH="arm"
 
-go build -o coalarm app.go
+go build -o coalarm .

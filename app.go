@@ -6,20 +6,49 @@ import (
 	"regexp"
 	"strconv"
 	"os/exec"
+	"fmt"
+	"net/http"
+	"bytes"
 	"time"
 )
 
 var co2Regex = regexp.MustCompile(`.*\[VALUE\].*CO2\:\s*(\d+)`)
-var co2Value = 0
+var co2Value = 0.0
 
 func main()  {
 
+	/*
 	go func () {
-		threshold := 1800 // see http://www.raumluft.org/natuerliche-mechanische-lueftung/co2-als-lueftungsindikator/
-		for range time.Tick(1 * time.Second){
-			if co2Value > threshold {
+		bps := calcBps(co2Value)
+		for range time.Tick(time.Duration(bps) * time.Second){
+			if co2Value > normalCo2 {
 				piipCmd := "/home/canbus/wiringPi/piip.sh"
 				exec.Command(piipCmd).Output()
+			}
+		}
+	}()
+	*/
+
+	go func () {
+		client := &http.Client{}
+		for range time.Tick(1 * time.Minute){
+			url := fmt.Sprintf("https://api.flipdot.org/sensors/co2/chill/%.2f/ppm", co2Value)
+			req, err := http.NewRequest("POST", url, nil)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			res, err := client.Do(req)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			if res.StatusCode != 200 {
+				buf := new(bytes.Buffer)
+				buf.ReadFrom(res.Body)
+				fmt.Println(res.Body)
 			}
 		}
 	}()
@@ -35,8 +64,8 @@ func main()  {
 			}
 
 			co2ValueString := groups[1]
-			co2Value, _ = strconv.Atoi(co2ValueString)
-			println(co2Value)
+			co2ValueInt, _ := strconv.Atoi(co2ValueString)
+			co2Value = float64(co2ValueInt)
 		}
 	}
 }
