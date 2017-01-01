@@ -48,7 +48,7 @@ func main()  {
 			if res.StatusCode != 200 {
 				buf := new(bytes.Buffer)
 				buf.ReadFrom(res.Body)
-				fmt.Println(res.Body)
+				fmt.Println(buf)
 			}
 		}
 	}()
